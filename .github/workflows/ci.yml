@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         destination:
-          - 'platform=iOS Simulator,id=003BA064-E7F6-4A16-8395-C3AADA4AA946'
+          - 'iOS Simulator'
           - 'platform=macOS'
     
     steps:
@@ -30,8 +30,11 @@ jobs:
         
     - name: Setup iOS Simulator
       run: |
-        # Use existing iPhone 16 with iOS 18.6
-        xcrun simctl boot "003BA064-E7F6-4A16-8395-C3AADA4AA946" || true
+        # Get first available iPhone simulator
+        SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -o '([^)]*)' | tr -d '()')
+        echo "Using simulator: $SIMULATOR_ID"
+        xcrun simctl boot "$SIMULATOR_ID" || true
+        echo "SIMULATOR_ID=$SIMULATOR_ID" >> $GITHUB_ENV
         
     - name: Swift Build
       run: swift build
@@ -41,14 +44,22 @@ jobs:
       
     - name: Xcode Test
       run: |
-        xcodebuild test \
-          -scheme TraceWiseSDK \
-          -destination '${{ matrix.destination }}' \
-          -enableCodeCoverage YES \
-          -derivedDataPath DerivedData
+        if [[ "${{ matrix.destination }}" == "iOS Simulator" ]]; then
+          xcodebuild test \
+            -scheme TraceWiseSDK \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -enableCodeCoverage YES \
+            -derivedDataPath DerivedData
+        else
+          xcodebuild test \
+            -scheme TraceWiseSDK \
+            -destination '${{ matrix.destination }}' \
+            -enableCodeCoverage YES \
+            -derivedDataPath DerivedData
+        fi
           
     - name: Code Coverage
-      if: matrix.destination == 'platform=iOS Simulator,id=003BA064-E7F6-4A16-8395-C3AADA4AA946'
+      if: matrix.destination == 'iOS Simulator'
       run: |
         xcrun llvm-cov export \
           DerivedData/Build/Products/Debug-iphonesimulator/TraceWiseSDKTests.xctest/Contents/MacOS/TraceWiseSDKTests \
