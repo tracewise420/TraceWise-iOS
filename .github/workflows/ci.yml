@@ -30,8 +30,8 @@ jobs:
         
     - name: Setup iOS Simulator
       run: |
-        # Get first available iPhone simulator
-        SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | sed 's/.*(//' | sed 's/).*//')
+        # Get first available iPhone simulator UUID
+        SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -o '[A-F0-9-]\{36\}')
         echo "Using simulator: $SIMULATOR_ID"
         xcrun simctl boot "$SIMULATOR_ID" || true
         echo "SIMULATOR_ID=$SIMULATOR_ID" >> "$GITHUB_ENV"
