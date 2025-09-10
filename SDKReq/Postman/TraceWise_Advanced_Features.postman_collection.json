@@ -1,0 +1,242 @@
+{
+  "info": {
+    "name": "TraceWise Advanced Features",
+    "description": "Advanced features testing - Webhooks, AI/ML, Admin (Tenants & Assets covered in Complete collection)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{FIREBASE_TOKEN}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{BASE_URL}}/v1"
+    },
+    {
+      "key": "TEST_GTIN",
+      "value": "{{GTIN}}"
+    },
+    {
+      "key": "TEST_SERIAL", 
+      "value": "{{SERIAL}}"
+    },
+    {
+      "key": "WEBHOOK_URL",
+      "value": "https://webhook.site/unique-id"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔗 Webhooks",
+      "item": [
+        {
+          "name": "Create Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"{{WEBHOOK_URL}}\",\n  \"events\": [\"product.created\", \"event.created\", \"dpp.updated\"],\n  \"secret\": \"webhook-secret-key\",\n  \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/webhooks",
+              "host": ["{{baseUrl}}"],
+              "path": ["webhooks"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Webhooks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/webhooks",
+              "host": ["{{baseUrl}}"],
+              "path": ["webhooks"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🤖 AI/ML Features",
+      "item": [
+        {
+          "name": "Detect Anomaly",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gtin\": \"{{TEST_GTIN}}\",\n  \"eventType\": \"observe\",\n  \"location\": \"Warehouse B\",\n  \"timestamp\": 1705312200000,\n  \"metadata\": {\n    \"temperature\": \"35C\",\n    \"humidity\": \"80%\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/anomaly/detect",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "anomaly", "detect"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Recommendations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/recommendations?gtin={{TEST_GTIN}}&category=electronics",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "recommendations"],
+              "query": [
+                {
+                  "key": "gtin",
+                  "value": "{{TEST_GTIN}}"
+                },
+                {
+                  "key": "category",
+                  "value": "electronics"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Predict Demand",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gtin\": \"{{TEST_GTIN}}\",\n  \"timeframe\": \"month\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/predict/demand",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "predict", "demand"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📊 Advanced Bulk Operations",
+      "item": [
+        {
+          "name": "Advanced Bulk Products",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operations\": [\n    {\n      \"operation\": \"create\",\n      \"data\": {\n        \"gtin\": \"0123456789029\",\n        \"serial\": \"BULK001\",\n        \"name\": \"Advanced Bulk Product 1\",\n        \"category\": \"electronics\"\n      }\n    },\n    {\n      \"operation\": \"create\",\n      \"data\": {\n        \"gtin\": \"0123456789036\",\n        \"serial\": \"BULK002\",\n        \"name\": \"Advanced Bulk Product 2\",\n        \"category\": \"electronics\"\n      }\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/bulk/advanced/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["bulk", "advanced", "products"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Advanced Bulk Events",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operations\": [\n    {\n      \"operation\": \"create\",\n      \"data\": {\n        \"gtin\": \"0123456789029\",\n        \"serial\": \"BULK001\",\n        \"type\": \"ObjectEvent\",\n        \"action\": \"ADD\",\n        \"bizStep\": \"commissioning\",\n        \"when\": \"{{$isoTimestamp}}\"\n      }\n    },\n    {\n      \"operation\": \"create\",\n      \"data\": {\n        \"gtin\": \"0123456789036\",\n        \"serial\": \"BULK002\",\n        \"type\": \"ObjectEvent\",\n        \"action\": \"ADD\",\n        \"bizStep\": \"commissioning\",\n        \"when\": \"{{$isoTimestamp}}\"\n      }\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/bulk/advanced/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["bulk", "advanced", "events"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "⚙️ Admin & Monitoring",
+      "item": [
+        {
+          "name": "Performance Benchmarks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/performance/benchmarks",
+              "host": ["{{baseUrl}}"],
+              "path": ["performance", "benchmarks"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Security Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/security/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["security", "status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cache Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/cache/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["cache", "stats"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

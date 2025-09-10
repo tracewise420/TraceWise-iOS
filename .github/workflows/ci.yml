@@ -1,0 +1,106 @@
+name: TraceWise iOS SDK CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+
+env:
+  DEVELOPER_DIR: /Applications/Xcode_15.0.app/Contents/Developer
+
+jobs:
+  test:
+    name: Test SDK
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        destination:
+          - 'platform=iOS Simulator,name=iPhone 15,OS=17.0'
+          - 'platform=macOS'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Select Xcode
+      run: sudo xcode-select -switch /Applications/Xcode_15.0.app/Contents/Developer
+      
+    - name: Swift Build
+      run: swift build
+      
+    - name: Swift Test
+      run: swift test --enable-code-coverage
+      
+    - name: Xcode Test
+      run: |
+        xcodebuild test \
+          -scheme TraceWiseSDK \
+          -destination '${{ matrix.destination }}' \
+          -enableCodeCoverage YES \
+          -derivedDataPath DerivedData
+          
+    - name: Code Coverage
+      if: matrix.destination == 'platform=iOS Simulator,name=iPhone 15,OS=17.0'
+      run: |
+        xcrun llvm-cov export \
+          DerivedData/Build/Products/Debug-iphonesimulator/TraceWiseSDKTests.xctest/Contents/MacOS/TraceWiseSDKTests \
+          -instr-profile DerivedData/Build/ProfileData/*/Coverage.profdata \
+          -format="lcov" > coverage.lcov
+          
+    - name: Upload Coverage
+      if: matrix.destination == 'platform=iOS Simulator,name=iPhone 15,OS=17.0'
+      uses: codecov/codecov-action@v3
+      with:
+        file: coverage.lcov
+        fail_ci_if_error: false
+
+  validate-podspec:
+    name: Validate CocoaPods
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Install CocoaPods
+      run: gem install cocoapods
+      
+    - name: Validate Podspec
+      run: pod spec lint TraceWiseSDK.podspec --allow-warnings
+
+  publish-cocoapods:
+    name: Publish to CocoaPods
+    runs-on: macos-latest
+    needs: [test, validate-podspec]
+    if: github.event_name == 'release'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Install CocoaPods
+      run: gem install cocoapods
+      
+    - name: Publish to CocoaPods Trunk
+      env:
+        COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
+      run: pod trunk push TraceWiseSDK.podspec --allow-warnings
+
+  create-spm-release:
+    name: Validate SPM Release
+    runs-on: macos-latest
+    needs: test
+    if: github.event_name == 'release'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Validate Package.swift
+      run: swift package resolve
+      
+    - name: Build Release
+      run: swift build -c release

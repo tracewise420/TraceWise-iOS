@@ -1,0 +1,1452 @@
+{
+	"info": {
+		"_postman_id": "tracewise-core-api",
+		"name": "TraceWise Core API",
+		"description": "Core API collection covering all essential endpoints with complete CRUD operations\n\nIncludes:\n- Authentication & authorization\n- Products (full CRUD + user registration)\n- EPCIS Events\n- Digital Product Passports (DPP)\n- Tenants & Partners (full CRUD)\n- Assets management\n- Search functionality\n- Warranty/repair/resale\n- Webhooks\n- Bulk operations\n- Admin & audit",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "System",
+			"item": [
+				{
+					"name": "API Info",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{API_KEY}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}"]
+						}
+					}
+				},
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{API_KEY}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/health",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "health"]
+						}
+					}
+				},
+				{
+					"name": "Metrics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/metrics",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "metrics"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Get CSRF Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('CSRF_TOKEN', response.csrfToken);",
+									"    console.log('CSRF Token saved:', response.csrfToken);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{API_KEY}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/csrf-token",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "csrf-token"]
+						}
+					}
+				},
+				{
+					"name": "Firebase Sign Up (Auto-Save)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('FIREBASE_TOKEN', response.idToken);",
+									"    pm.environment.set('USER_ID', response.localId);",
+									"    console.log('✅ User created - Token saved');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"returnSecureToken\": true\n}"
+						},
+						"url": {
+							"raw": "http://localhost:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=demo-project",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "9099",
+							"path": ["identitytoolkit.googleapis.com", "v1", "accounts:signUp"],
+							"query": [
+								{
+									"key": "key",
+									"value": "demo-project"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Firebase Sign In (Auto-Save)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('FIREBASE_TOKEN', response.idToken);",
+									"    pm.environment.set('USER_ID', response.localId);",
+									"    console.log('✅ Signed in - Token saved');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"returnSecureToken\": true\n}"
+						},
+						"url": {
+							"raw": "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={{WEB_API_KEY}}",
+							"protocol": "https",
+							"host": ["identitytoolkit.googleapis.com"],
+							"path": ["v1", "accounts:signInWithPassword"],
+							"query": [
+								{
+									"key": "key",
+									"value": "{{WEB_API_KEY}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Firebase Sign In Local (Auto-Save)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('FIREBASE_TOKEN', response.idToken);",
+									"    pm.environment.set('USER_ID', response.localId);",
+									"    console.log('✅ Signed in locally - Token saved');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"returnSecureToken\": true\n}"
+						},
+						"url": {
+							"raw": "http://localhost:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=demo-project",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "9099",
+							"path": ["identitytoolkit.googleapis.com", "v1", "accounts:signInWithPassword"],
+							"query": [
+								{
+									"key": "key",
+									"value": "demo-project"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Token (Client Credentials)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"grant_type\": \"client_credentials\",\n  \"client_id\": \"{{CLIENT_ID}}\",\n  \"client_secret\": \"{{CLIENT_SECRET}}\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/auth/token",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "auth", "token"]
+						}
+					}
+				},
+				{
+					"name": "Get Token (Authorization Code)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"grant_type\": \"authorization_code\",\n  \"code\": \"{{AUTH_CODE}}\",\n  \"redirect_uri\": \"{{REDIRECT_URI}}\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/auth/token",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "auth", "token"]
+						}
+					}
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"grant_type\": \"refresh_token\",\n  \"refresh_token\": \"{{REFRESH_TOKEN}}\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/auth/token",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "auth", "token"]
+						}
+					}
+				},
+				{
+					"name": "Get Current User Info",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/auth/me",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "auth", "me"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Products",
+			"item": [
+				{
+					"name": "Get Product by GTIN & Serial",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/products?gtin={{GTIN}}&serial={{SERIAL}}",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "products"],
+							"query": [
+								{
+									"key": "gtin",
+									"value": "{{GTIN}}"
+								},
+								{
+									"key": "serial",
+									"value": "{{SERIAL}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "List Products",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/products/list?pageSize=20",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "products", "list"],
+							"query": [
+								{
+									"key": "pageSize",
+									"value": "20"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Product",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-CSRF-Token",
+								"value": "{{CSRF_TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"gtin\": \"{{GTIN}}\",\n  \"serial\": \"{{SERIAL}}\",\n  \"name\": \"Sample Product\",\n  \"description\": \"A sample product for testing\",\n  \"manufacturer\": \"Test Manufacturer\",\n  \"category\": \"Electronics\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/products",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "products"]
+						}
+					}
+				},
+				{
+					"name": "Get Product by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/products/{{PRODUCT_ID}}",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "products", "{{PRODUCT_ID}}"]
+						}
+					}
+				},
+				{
+					"name": "Update Product",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Product Name\",\n  \"description\": \"Updated description\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/products/{{PRODUCT_ID}}",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "products", "{{PRODUCT_ID}}"]
+						}
+					}
+				},
+				{
+					"name": "Delete Product",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/products/{{PRODUCT_ID}}",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "products", "{{PRODUCT_ID}}"]
+						}
+					}
+				},
+				{
+					"name": "Register Product to User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"gtin\": \"{{GTIN}}\",\n  \"serial\": \"{{SERIAL}}\",\n  \"userId\": \"{{USER_ID}}\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/products/register",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "products", "register"]
+						}
+					}
+				},
+				{
+					"name": "Get User Products",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/products/users/{{USER_ID}}?pageSize=20",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "products", "users", "{{USER_ID}}"],
+							"query": [
+								{
+									"key": "pageSize",
+									"value": "20"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Events & Lifecycle",
+			"item": [
+
+
+				{
+					"name": "Get Product Events",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/events/{{GTIN}}/{{SERIAL}}?pageSize=20",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "events", "{{GTIN}}", "{{SERIAL}}"],
+							"query": [
+								{
+									"key": "pageSize",
+									"value": "20"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Record EPCIS Event",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"gtin\": \"{{GTIN}}\",\n  \"serial\": \"{{SERIAL}}\",\n  \"type\": \"ObjectEvent\",\n  \"action\": \"OBSERVE\",\n  \"bizStep\": \"shipping\",\n  \"disposition\": \"in_transit\",\n  \"when\": \"{{$isoTimestamp}}\",\n  \"readPoint\": \"urn:epc:id:sgln:0614141.00888.0\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/events",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "events"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Digital Product Passport (DPP)",
+			"item": [
+				{
+					"name": "Create DPP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"gtin\": \"{{GTIN}}\",\n  \"serial\": \"{{SERIAL}}\",\n  \"claims\": {\n    \"sustainability\": {\n      \"carbonFootprint\": \"2.5kg CO2\",\n      \"recyclable\": true\n    },\n    \"warranty\": {\n      \"duration\": \"2 years\",\n      \"coverage\": \"full\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/dpp",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "dpp"]
+						}
+					}
+				},
+
+				{
+					"name": "Get DPP",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/dpp/{{GTIN}}/{{SERIAL}}",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "dpp", "{{GTIN}}", "{{SERIAL}}"]
+						}
+					}
+				},
+				{
+					"name": "Patch DPP Claims",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"op\": \"add\",\n  \"path\": \"warranty\",\n  \"value\": {\n    \"duration\": \"2 years\",\n    \"coverage\": \"full\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/dpp/{{GTIN}}/{{SERIAL}}/claims",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "dpp", "{{GTIN}}", "{{SERIAL}}", "claims"]
+						}
+					}
+				},
+				{
+					"name": "Verify DPP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"checks\": [\"schema\", \"signature\", \"consistency\"]\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/dpp/{{GTIN}}/{{SERIAL}}/verify",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "dpp", "{{GTIN}}", "{{SERIAL}}", "verify"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "CIRPASS Simulation",
+			"item": [
+				{
+					"name": "Seed CIRPASS Products",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"products\": [\n    {\n      \"id\": \"cirpass-001\",\n      \"name\": \"CIRPASS Test Product\",\n      \"category\": \"Electronics\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/cirpass-sim/seed",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "cirpass-sim", "seed"]
+						}
+					}
+				},
+				{
+					"name": "Get CIRPASS Product",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/cirpass-sim/product/{{CIRPASS_PRODUCT_ID}}",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "cirpass-sim", "product", "{{CIRPASS_PRODUCT_ID}}"]
+						}
+					}
+				},
+				{
+					"name": "List CIRPASS Products",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/cirpass-sim/products?limit=20",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "cirpass-sim", "products"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Assets",
+			"item": [
+				{
+					"name": "Create Asset Upload Session",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"image/jpeg\",\n  \"purpose\": \"product_photo\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/assets/{{GTIN}}/{{SERIAL}}",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "assets", "{{GTIN}}", "{{SERIAL}}"]
+						}
+					}
+				},
+				{
+					"name": "List Product Assets",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/assets/{{GTIN}}/{{SERIAL}}",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "assets", "{{GTIN}}", "{{SERIAL}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Search",
+			"item": [
+				{
+					"name": "Search Products",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/search/products?q=test&manufacturer=TestCorp&from=2024-01-01T00:00:00Z&to=2024-12-31T23:59:59Z&tags=electronics&tags=mobile&pageSize=20",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "search", "products"],
+							"query": [
+								{
+									"key": "q",
+									"value": "test"
+								},
+								{
+									"key": "manufacturer",
+									"value": "TestCorp"
+								},
+								{
+									"key": "from",
+									"value": "2024-01-01T00:00:00Z"
+								},
+								{
+									"key": "to",
+									"value": "2024-12-31T23:59:59Z"
+								},
+								{
+									"key": "tags",
+									"value": "electronics"
+								},
+								{
+									"key": "tags",
+									"value": "mobile"
+								},
+								{
+									"key": "pageSize",
+									"value": "20"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Search Events",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/search/events?type=ObjectEvent&bizStep=commissioning&readPoint=urn:epc:id:sgln:0614141.00777.0&when.from=2024-01-01T00:00:00Z&when.to=2024-12-31T23:59:59Z&pageSize=20",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "search", "events"],
+							"query": [
+								{
+									"key": "type",
+									"value": "ObjectEvent"
+								},
+								{
+									"key": "bizStep",
+									"value": "commissioning"
+								},
+								{
+									"key": "readPoint",
+									"value": "urn:epc:id:sgln:0614141.00777.0"
+								},
+								{
+									"key": "when.from",
+									"value": "2024-01-01T00:00:00Z"
+								},
+								{
+									"key": "when.to",
+									"value": "2024-12-31T23:59:59Z"
+								},
+								{
+									"key": "pageSize",
+									"value": "20"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Resolve",
+			"item": [
+				{
+					"name": "Resolve Product Links",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/resolve?gtin={{GTIN}}&serial={{SERIAL}}",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "resolve"],
+							"query": [
+								{
+									"key": "gtin",
+									"value": "{{GTIN}}"
+								},
+								{
+									"key": "serial",
+									"value": "{{SERIAL}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Resolve Specific Link Type",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/resolve?gtin={{GTIN}}&serial={{SERIAL}}&linkType=dppUrl",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "resolve"],
+							"query": [
+								{
+									"key": "gtin",
+									"value": "{{GTIN}}"
+								},
+								{
+									"key": "serial",
+									"value": "{{SERIAL}}"
+								},
+								{
+									"key": "linkType",
+									"value": "dppUrl"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Warranty & Repair",
+			"item": [
+				{
+					"name": "Get Warranty Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/warranty/{{GTIN}}/{{SERIAL}}",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "warranty", "{{GTIN}}", "{{SERIAL}}"]
+						}
+					}
+				},
+				{
+					"name": "Create Repair Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"gtin\": \"{{GTIN}}\",\n  \"serial\": \"{{SERIAL}}\",\n  \"issue\": \"Screen cracked\",\n  \"partnerId\": \"repair_center_001\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/repair-orders",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "repair-orders"]
+						}
+					}
+				},
+				{
+					"name": "Create Resale Listing",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"gtin\": \"{{GTIN}}\",\n  \"serial\": \"{{SERIAL}}\",\n  \"grade\": \"A\",\n  \"askPrice\": 299.99,\n  \"marketplace\": \"ebay\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/resale/listings",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "resale", "listings"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Webhooks",
+			"item": [
+				{
+					"name": "Register Webhook",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"url\": \"https://example.com/webhook\",\n  \"events\": [\"product.created\", \"event.added\"],\n  \"secret\": \"webhook_secret_123\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/webhooks",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "webhooks"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Bulk Operations",
+			"item": [
+				{
+					"name": "Bulk Create Products",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"gtin\": \"1234567890123\",\n      \"serial\": \"SN001\",\n      \"name\": \"Bulk Product 1\",\n      \"manufacturer\": \"TestCorp\"\n    },\n    {\n      \"gtin\": \"1234567890124\",\n      \"serial\": \"SN002\",\n      \"name\": \"Bulk Product 2\",\n      \"manufacturer\": \"TestCorp\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/bulk/products",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "bulk", "products"]
+						}
+					}
+				},
+				{
+					"name": "Bulk Create Events",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"gtin\": \"00012345678905\",\n      \"serial\": \"SN001\",\n      \"type\": \"ObjectEvent\",\n      \"action\": \"ADD\",\n      \"bizStep\": \"commissioning\",\n      \"disposition\": \"active\",\n      \"when\": \"{{$isoTimestamp}}\"\n    },\n    {\n      \"gtin\": \"00012345678905\",\n      \"serial\": \"SN002\",\n      \"type\": \"ObjectEvent\",\n      \"action\": \"ADD\",\n      \"bizStep\": \"commissioning\",\n      \"disposition\": \"active\",\n      \"when\": \"{{$isoTimestamp}}\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/bulk/events",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "bulk", "events"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Tenants",
+			"item": [
+				{
+					"name": "Create Tenant",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Test Tenant\",\n  \"plan\": \"enterprise\",\n  \"gs1CompanyPrefix\": \"0614141\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/tenants",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "tenants"]
+						}
+					}
+				},
+				{
+					"name": "List Tenants",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/tenants?pageSize=20",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "tenants"],
+							"query": [
+								{
+									"key": "pageSize",
+									"value": "20"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Tenant",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/tenants/{{TENANT_ID}}",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "tenants", "{{TENANT_ID}}"]
+						}
+					}
+				},
+				{
+					"name": "Update Tenant",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Tenant Name\",\n  \"plan\": \"premium\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/tenants/{{TENANT_ID}}",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "tenants", "{{TENANT_ID}}"]
+						}
+					}
+				},
+				{
+					"name": "Delete Tenant",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/tenants/{{TENANT_ID}}",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "tenants", "{{TENANT_ID}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Partners",
+			"item": [
+				{
+					"name": "Create Partner",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tenantId\": \"{{TENANT_ID}}\",\n  \"type\": \"repair_center\",\n  \"name\": \"Test Repair Center\",\n  \"scopes\": [\"repair\", \"warranty\"]\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/partners",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "partners"]
+						}
+					}
+				},
+				{
+					"name": "Create Tenant Partner",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"retailer\",\n  \"name\": \"Test Retailer\",\n  \"scopes\": [\"sales\", \"support\"]\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/tenants/{{TENANT_ID}}/partners",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "tenants", "{{TENANT_ID}}", "partners"]
+						}
+					}
+				},
+				{
+					"name": "List Tenant Partners",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/tenants/{{TENANT_ID}}/partners?pageSize=20",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "tenants", "{{TENANT_ID}}", "partners"],
+							"query": [
+								{
+									"key": "pageSize",
+									"value": "20"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Partner",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/tenants/{{TENANT_ID}}/partners/{{PARTNER_ID}}",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "tenants", "{{TENANT_ID}}", "partners", "{{PARTNER_ID}}"]
+						}
+					}
+				},
+				{
+					"name": "Update Partner",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Partner Name\",\n  \"scopes\": [\"repair\", \"warranty\", \"support\"]\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/tenants/{{TENANT_ID}}/partners/{{PARTNER_ID}}",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "tenants", "{{TENANT_ID}}", "partners", "{{PARTNER_ID}}"]
+						}
+					}
+				},
+				{
+					"name": "Regenerate Partner API Key",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/tenants/{{TENANT_ID}}/partners/{{PARTNER_ID}}/regenerate-key",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "tenants", "{{TENANT_ID}}", "partners", "{{PARTNER_ID}}", "regenerate-key"]
+						}
+					}
+				},
+				{
+					"name": "Delete Partner",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/tenants/{{TENANT_ID}}/partners/{{PARTNER_ID}}",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "tenants", "{{TENANT_ID}}", "partners", "{{PARTNER_ID}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Audit",
+			"item": [
+				{
+					"name": "Get Audit Logs",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{FIREBASE_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/{{API_VERSION}}/audit/logs?pageSize=20",
+							"host": ["{{BASE_URL}}"],
+							"path": ["{{API_VERSION}}", "audit", "logs"],
+							"query": [
+								{
+									"key": "pageSize",
+									"value": "20"
+								}
+							]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "BASE_URL",
+			"value": "http://localhost:5002/tracewise-420/europe-central2/api"
+		},
+		{
+			"key": "API_VERSION",
+			"value": "v1"
+		},
+		{
+			"key": "FIREBASE_TOKEN",
+			"value": ""
+		},
+		{
+			"key": "API_KEY",
+			"value": "dev-key"
+		},
+		{
+			"key": "GTIN",
+			"value": "1234567890123"
+		},
+		{
+			"key": "SERIAL",
+			"value": "SN123456"
+		},
+		{
+			"key": "USER_ID",
+			"value": "yqKFOev5h83DHAoj3YTkeK21O1ks"
+		},
+		{
+			"key": "PRODUCT_ID",
+			"value": ""
+		},
+		{
+			"key": "TENANT_ID",
+			"value": ""
+		},
+		{
+			"key": "PARTNER_ID",
+			"value": ""
+		},
+		{
+			"key": "CIRPASS_PRODUCT_ID",
+			"value": "cirpass-001"
+		},
+		{
+			"key": "CLIENT_ID",
+			"value": ""
+		},
+		{
+			"key": "CLIENT_SECRET",
+			"value": ""
+		},
+		{
+			"key": "AUTH_CODE",
+			"value": ""
+		},
+		{
+			"key": "REDIRECT_URI",
+			"value": ""
+		},
+		{
+			"key": "REFRESH_TOKEN",
+			"value": ""
+		}
+	]
+}
