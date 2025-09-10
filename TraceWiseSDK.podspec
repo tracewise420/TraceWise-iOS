@@ -13,7 +13,7 @@ Pod::Spec.new do |spec|
   spec.watchos.deployment_target = "6.0"
   spec.tvos.deployment_target = "13.0"
   
-  spec.source       = { :git => "https://github.com/tracewise420/TraceWise-iOS.git", :tag => "#{spec.version}" }
+  spec.source       = { :git => "https://github.com/tracewise420/TraceWise-iOS.git", :tag => "v#{spec.version}" }
   spec.source_files = "Sources/TraceWiseSDK/**/*.swift"
   
   spec.dependency "Firebase/Auth", "~> 10.0"
