@@ -25,9 +25,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
       
-    - name: Select Xcode
-      run: sudo xcode-select -switch /Applications/Xcode_15.0.app/Contents/Developer
-      
     - name: Swift Build
       run: swift build
       
