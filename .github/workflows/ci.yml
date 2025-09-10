@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         destination:
-          - 'platform=iOS Simulator,name=iPhone-15-Test'
+          - 'platform=iOS Simulator,id=003BA064-E7F6-4A16-8395-C3AADA4AA946'
           - 'platform=macOS'
     
     steps:
@@ -30,9 +30,8 @@ jobs:
         
     - name: Setup iOS Simulator
       run: |
-        # Install iOS 17.2 runtime if not available
-        sudo xcrun simctl create "iPhone-15-Test" "iPhone 15" "iOS17.2" || true
-        xcrun simctl boot "iPhone-15-Test" || true
+        # Use existing iPhone 16 with iOS 18.6
+        xcrun simctl boot "003BA064-E7F6-4A16-8395-C3AADA4AA946" || true
         
     - name: Swift Build
       run: swift build
@@ -49,7 +48,7 @@ jobs:
           -derivedDataPath DerivedData
           
     - name: Code Coverage
-      if: matrix.destination == 'platform=iOS Simulator,name=iPhone-15-Test'
+      if: matrix.destination == 'platform=iOS Simulator,id=003BA064-E7F6-4A16-8395-C3AADA4AA946'
       run: |
         xcrun llvm-cov export \
           DerivedData/Build/Products/Debug-iphonesimulator/TraceWiseSDKTests.xctest/Contents/MacOS/TraceWiseSDKTests \
