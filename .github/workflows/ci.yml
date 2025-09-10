@@ -15,13 +15,25 @@ jobs:
     strategy:
       matrix:
         destination:
-          - 'platform=iOS Simulator,name=Any iOS Device'
+          - 'platform=iOS Simulator,name=iPhone-15-Test'
           - 'platform=macOS'
     
     steps:
     - name: Checkout
       uses: actions/checkout@v4
       
+    - name: List Available Simulators
+      run: |
+        xcrun simctl list devices available
+        echo "Available runtimes:"
+        xcrun simctl list runtimes
+        
+    - name: Setup iOS Simulator
+      run: |
+        # Install iOS 17.2 runtime if not available
+        sudo xcrun simctl create "iPhone-15-Test" "iPhone 15" "iOS17.2" || true
+        xcrun simctl boot "iPhone-15-Test" || true
+        
     - name: Swift Build
       run: swift build
       
@@ -37,7 +49,7 @@ jobs:
           -derivedDataPath DerivedData
           
     - name: Code Coverage
-      if: matrix.destination == 'platform=iOS Simulator,name=Any iOS Device'
+      if: matrix.destination == 'platform=iOS Simulator,name=iPhone-15-Test'
       run: |
         xcrun llvm-cov export \
           DerivedData/Build/Products/Debug-iphonesimulator/TraceWiseSDKTests.xctest/Contents/MacOS/TraceWiseSDKTests \
@@ -45,7 +57,7 @@ jobs:
           -format="lcov" > coverage.lcov
           
     - name: Upload Coverage
-      if: matrix.destination == 'platform=iOS Simulator,name=Any iOS Device'
+      if: matrix.destination == 'platform=macOS'
       uses: codecov/codecov-action@v3
       with:
         file: coverage.lcov
