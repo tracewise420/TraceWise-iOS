@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         destination:
-          - 'platform=iOS Simulator,name=iPhone 15,OS=17.0'
+          - 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.0'
           - 'platform=macOS'
     
     steps:
