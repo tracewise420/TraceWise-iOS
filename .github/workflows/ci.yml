@@ -31,10 +31,10 @@ jobs:
     - name: Setup iOS Simulator
       run: |
         # Get first available iPhone simulator
-        SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -o '([^)]*)' | tr -d '()')
+        SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | sed 's/.*(//' | sed 's/).*//')
         echo "Using simulator: $SIMULATOR_ID"
         xcrun simctl boot "$SIMULATOR_ID" || true
-        echo "SIMULATOR_ID=$SIMULATOR_ID" >> $GITHUB_ENV
+        echo "SIMULATOR_ID=$SIMULATOR_ID" >> "$GITHUB_ENV"
         
     - name: Swift Build
       run: swift build
