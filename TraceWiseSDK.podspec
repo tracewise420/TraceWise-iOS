@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name         = "TraceWiseSDK"
-  spec.version      = "1.0.0"
+  spec.version      = "1.0.1"
   spec.summary      = "Official TraceWise SDK for iOS with exact Trello task signatures"
   spec.description  = "TraceWise SDK provides seamless integration with TraceWise API for supply chain transparency and digital product passports."
   
