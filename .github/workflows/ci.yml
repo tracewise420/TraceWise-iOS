@@ -60,14 +60,24 @@ jobs:
           
     - name: Code Coverage
       if: matrix.destination == 'iOS Simulator'
+      continue-on-error: true
       run: |
-        xcrun llvm-cov export \
-          DerivedData/Build/Products/Debug-iphonesimulator/TraceWiseSDKTests.xctest/Contents/MacOS/TraceWiseSDKTests \
-          -instr-profile DerivedData/Build/ProfileData/*/Coverage.profdata \
-          -format="lcov" > coverage.lcov
+        # Find actual test bundle and profdata files
+        TEST_BUNDLE=$(find DerivedData -name "TraceWiseSDKTests.xctest" -type d | head -1)
+        PROFDATA=$(find DerivedData -name "Coverage.profdata" | head -1)
+        
+        if [[ -n "$TEST_BUNDLE" && -n "$PROFDATA" ]]; then
+          xcrun llvm-cov export \
+            "$TEST_BUNDLE/Contents/MacOS/TraceWiseSDKTests" \
+            -instr-profile "$PROFDATA" \
+            -format="lcov" > coverage.lcov || echo "Coverage generation failed"
+        else
+          echo "Test bundle or profdata not found, skipping coverage"
+        fi
           
     - name: Upload Coverage
-      if: matrix.destination == 'platform=macOS'
+      if: matrix.destination == 'iOS Simulator'
+      continue-on-error: true
       uses: codecov/codecov-action@v3
       with:
         file: coverage.lcov
