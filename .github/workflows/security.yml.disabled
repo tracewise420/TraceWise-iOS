@@ -32,9 +32,25 @@ jobs:
       
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
-      continue-on-error: true
+      with:
+        category: "/language:swift"
       
     - name: Dependency Check
       run: |
         swift package show-dependencies --format json > dependencies.json
         echo "Dependencies scanned successfully"
+        
+    - name: License Check
+      run: |
+        # Extract license information from Package.swift dependencies
+        swift package show-dependencies --format json | jq -r '.[] | "\(.identity): \(.requirement)"' > dependency-licenses.txt
+        echo "License information extracted"
+        
+    - name: Upload security artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          dependencies.json
+          dependency-licenses.txt

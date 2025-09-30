@@ -1,0 +1,37 @@
+name: Documentation
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  generate-docs:
+    name: Generate Documentation
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Generate Swift documentation
+      run: |
+        swift package generate-documentation --target TraceWiseSDK --output-path docs
+        
+    - name: Generate README
+      run: |
+        echo "# TraceWise iOS SDK Documentation" > docs/README.md
+        echo "" >> docs/README.md
+        echo "Auto-generated on: $(date)" >> docs/README.md
+        echo "" >> docs/README.md
+        echo "## Installation" >> docs/README.md
+        echo "\`\`\`swift" >> docs/README.md
+        echo ".package(url: \"https://github.com/tracewise/TraceWise-iOS.git\", from: \"1.0.0\")" >> docs/README.md
+        echo "\`\`\`" >> docs/README.md
+        
+    - name: Upload documentation
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-documentation
+        path: docs/

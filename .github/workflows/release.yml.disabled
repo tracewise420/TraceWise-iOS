@@ -1,0 +1,93 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  validate-version:
+    name: Validate Semantic Version
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Validate semver tag
+      run: |
+        TAG=${GITHUB_REF#refs/tags/}
+        if [[ ! $TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$ ]]; then
+          echo "❌ Invalid semantic version: $TAG"
+          exit 1
+        fi
+        echo "✅ Valid semantic version: $TAG"
+        
+    - name: Check podspec version
+      run: |
+        TAG=${GITHUB_REF#refs/tags/v}
+        PODSPEC_VERSION=$(grep "s.version" TraceWiseSDK.podspec | sed "s/.*'\(.*\)'.*/\1/")
+        if [ "$TAG" != "$PODSPEC_VERSION" ]; then
+          echo "❌ Tag version ($TAG) doesn't match podspec version ($PODSPEC_VERSION)"
+          exit 1
+        fi
+        echo "✅ Version consistency validated"
+
+  create-release:
+    name: Create Release
+    runs-on: macos-latest
+    needs: validate-version
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Extract Version
+      id: version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        
+    - name: Build and Test
+      run: |
+        set -e
+        echo "Building release version..."
+        swift build -c release
+        echo "Running tests..."
+        swift test
+        echo "Build and test completed successfully"
+        
+    - name: Generate changelog
+      id: changelog
+      run: |
+        TAG=${GITHUB_REF#refs/tags/}
+        PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        if [ -n "$PREV_TAG" ]; then
+          CHANGELOG=$(git log --pretty=format:"- %s" $PREV_TAG..HEAD)
+        else
+          CHANGELOG="Initial release"
+        fi
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        echo "$CHANGELOG" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        body: |
+          ## TraceWise iOS SDK v${{ steps.version.outputs.version }}
+          
+          ### Changes
+          ${{ steps.changelog.outputs.changelog }}
+          
+          ### Installation
+          ```swift
+          .package(url: "https://github.com/tracewise/TraceWise-iOS.git", from: "${{ steps.version.outputs.version }}")
+          ```
+        draft: false
+        prerelease: ${{ contains(github.ref, '-') }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

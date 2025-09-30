@@ -1,0 +1,22 @@
+name: Publish
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  publish-cocoapods:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Validate Podspec
+        run: pod spec lint TraceWiseSDK.podspec --allow-warnings
+      - name: Publish to CocoaPods
+        env:
+          COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
+        run: |
+          if [ -z "$COCOAPODS_TRUNK_TOKEN" ]; then
+            echo "❌ COCOAPODS_TRUNK_TOKEN not set"
+            exit 1
+          fi
+          pod trunk push TraceWiseSDK.podspec --allow-warnings

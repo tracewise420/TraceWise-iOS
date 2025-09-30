@@ -17,6 +17,8 @@ jobs:
         destination:
           - 'iOS Simulator'
           - 'platform=macOS'
+        xcode-version: ['15.0', '15.1']
+        ios-version: ['17.0', '17.1']
     
     steps:
     - name: Checkout
@@ -31,7 +33,7 @@ jobs:
     - name: Setup iOS Simulator
       run: |
         # Get first available iPhone simulator UUID
-        SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -o '[A-F0-9-]\{36\}')
+        SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -o '[A-Fa-f0-9-]\{36\}')
         echo "Using simulator: $SIMULATOR_ID"
         xcrun simctl boot "$SIMULATOR_ID" || true
         echo "SIMULATOR_ID=$SIMULATOR_ID" >> "$GITHUB_ENV"
@@ -60,7 +62,6 @@ jobs:
           
     - name: Code Coverage
       if: matrix.destination == 'iOS Simulator'
-      continue-on-error: true
       run: |
         # Find actual test bundle and profdata files
         TEST_BUNDLE=$(find DerivedData -name "TraceWiseSDKTests.xctest" -type d | head -1)
@@ -70,9 +71,21 @@ jobs:
           xcrun llvm-cov export \
             "$TEST_BUNDLE/Contents/MacOS/TraceWiseSDKTests" \
             -instr-profile "$PROFDATA" \
-            -format="lcov" > coverage.lcov || echo "Coverage generation failed"
+            -format="lcov" > coverage.lcov
+          
+          # Check coverage threshold
+          COVERAGE=$(xcrun llvm-cov report \
+            "$TEST_BUNDLE/Contents/MacOS/TraceWiseSDKTests" \
+            -instr-profile "$PROFDATA" | tail -1 | awk '{print $4}' | sed 's/%//')
+          echo "Coverage: $COVERAGE%"
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "❌ Coverage $COVERAGE% is below 80% threshold"
+            exit 1
+          fi
+          echo "✅ Coverage $COVERAGE% meets 80% threshold"
         else
-          echo "Test bundle or profdata not found, skipping coverage"
+          echo "Test bundle or profdata not found, failing coverage check"
+          exit 1
         fi
           
     - name: Upload Coverage

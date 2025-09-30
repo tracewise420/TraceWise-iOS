@@ -14,7 +14,15 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Select Xcode Version
-      run: sudo xcode-select -s /Applications/Xcode_15.0.app/Contents/Developer
+      run: |
+        # Use latest available Xcode version
+        XCODE_PATH=$(find /Applications -name "Xcode*.app" -maxdepth 1 | sort -V | tail -1)
+        if [ -n "$XCODE_PATH" ]; then
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+          echo "Selected Xcode: $XCODE_PATH"
+        else
+          echo "Using default Xcode installation"
+        fi
     
     - name: Cache Swift Package Manager
       uses: actions/cache@v3
@@ -68,7 +76,15 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Select Xcode Version
-      run: sudo xcode-select -s /Applications/Xcode_15.0.app/Contents/Developer
+      run: |
+        # Use latest available Xcode version
+        XCODE_PATH=$(find /Applications -name "Xcode*.app" -maxdepth 1 | sort -V | tail -1)
+        if [ -n "$XCODE_PATH" ]; then
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+          echo "Selected Xcode: $XCODE_PATH"
+        else
+          echo "Using default Xcode installation"
+        fi
     
     - name: Run Integration Tests
       run: swift test --filter IntegrationTests
