@@ -1,6 +1,6 @@
 import Foundation
 
-public struct CirpassProduct: Codable {
+public struct CirpassProduct: Codable, Equatable {
     public let id: String
     public let gtin: String?
     public let serial: String?
@@ -12,26 +12,23 @@ public struct CirpassProduct: Codable {
     public let warranty: Warranty?
     public let repairability: Repairability?
     
-    public struct Manufacturer: Codable {
+    public struct Manufacturer: Codable, Equatable {
         public let name: String
         public let country: String
     }
     
-    public struct LifecycleInfo: Codable {
+    public struct LifecycleInfo: Codable, Equatable {
         public let eventType: String
         public let timestamp: String
         public let details: [String: AnyCodable]?
     }
     
-    public struct Warranty: Codable {
+    public struct Warranty: Codable, Equatable {
         public let ends: String
     }
     
-    public struct Repairability: Codable {
+    public struct Repairability: Codable, Equatable {
         public let score: Double
     }
 }
 
-public struct CirpassProductsResponse: Codable {
-    public let products: [CirpassProduct]
-}

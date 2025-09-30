@@ -49,4 +49,22 @@ final class TraceWiseSDKTests: XCTestCase {
             XCTAssertTrue(error is TraceWiseError)
         }
     }
+    
+    func testModulesInitialization() {
+        // Test that all modules are properly initialized
+        XCTAssertNotNil(sdk.products)
+        XCTAssertNotNil(sdk.dpp)
+        XCTAssertNotNil(sdk.search)
+        XCTAssertNotNil(sdk.resolve)
+        XCTAssertNotNil(sdk.cirpass)
+    }
+    
+    func testModularAccess() {
+        // Test that modules can be accessed independently
+        XCTAssertTrue(sdk.products is ProductsModule)
+        XCTAssertTrue(sdk.dpp is DPPModule)
+        XCTAssertTrue(sdk.search is SearchModule)
+        XCTAssertTrue(sdk.resolve is ResolveModule)
+        XCTAssertTrue(sdk.cirpass is CirpassModule)
+    }
 }

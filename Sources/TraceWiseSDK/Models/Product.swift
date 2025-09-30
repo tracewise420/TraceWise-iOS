@@ -25,7 +25,7 @@ public struct Product: Codable, Equatable {
     }
 }
 
-public struct ProductIDs: Equatable {
+public struct ProductIDs: Codable, Equatable {
     public let gtin: String
     public let serial: String?
     public let batch: String?

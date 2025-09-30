@@ -21,7 +21,9 @@ class APIClient: APIClientProtocol {
     private let session: URLSession
     private let retryManager: RetryManager
     private let authProvider: AuthProvider
-    private let subscriptionStorage = SubscriptionStorage()
+    private var subscriptionManager: SubscriptionManager!
+    private var csrfManager: CSRFManager!
+    private let performanceMonitor = PerformanceMonitor.shared
     
     init(config: SDKConfig) {
         self.config = config
@@ -32,18 +34,14 @@ class APIClient: APIClientProtocol {
         configuration.timeoutIntervalForRequest = config.timeoutInterval
         configuration.timeoutIntervalForResource = config.timeoutInterval * 2
         self.session = URLSession(configuration: configuration)
+        
+        // Initialize managers after self is fully initialized
+        self.subscriptionManager = SubscriptionManager(apiClient: self)
+        self.csrfManager = CSRFManager(apiClient: self)
     }
     
     private func checkRateLimit() throws {
-        guard let subscriptionInfo = subscriptionStorage.load(),
-              subscriptionInfo.tier == "free" else { return }
-        
-        let usage = subscriptionInfo.usage
-        let limits = subscriptionInfo.limits
-        
-        if usage.apiCallsThisMinute >= limits.apiCallsPerMinute {
-            throw TraceWiseError.rateLimitExceeded(retryAfter: 60)
-        }
+        try subscriptionManager.checkRateLimit()
     }
     
     func request<T: Codable>(
@@ -89,6 +87,19 @@ class APIClient: APIClientProtocol {
         if method == .POST {
             let idempotencyKey = "\(Date().timeIntervalSince1970)-\(UUID().uuidString)"
             request.setValue(idempotencyKey, forHTTPHeaderField: "Idempotency-Key")
+            
+            // Add CSRF token for POST requests
+            if endpoint.contains("/register") || endpoint.contains("/events") || endpoint.contains("/dpp") {
+                do {
+                    let csrfToken = try await csrfManager.getCSRFToken()
+                    request.setValue(csrfToken, forHTTPHeaderField: "X-CSRF-Token")
+                } catch {
+                    // Log CSRF token fetch error but continue with request
+                    if config.enableLogging {
+                        print("⚠️ Failed to fetch CSRF token: \(error)")
+                    }
+                }
+            }
         }
         
         if let body = body {
@@ -102,12 +113,23 @@ class APIClient: APIClientProtocol {
             }
         }
         
+        let startTime = Date()
+        var success = false
+        
         do {
             let (data, response) = try await session.data(for: request)
             
             guard let httpResponse = response as? HTTPURLResponse else {
+                let duration = Date().timeIntervalSince(startTime)
+                performanceMonitor.trackAPICall(
+                    endpoint: performanceMonitor.extractEndpoint(from: request.url?.path ?? ""),
+                    duration: duration,
+                    success: false
+                )
                 throw TraceWiseError.invalidResponse
             }
+            
+            success = httpResponse.statusCode < 400
             
             if config.enableLogging {
                 print("📥 Response: \(httpResponse.statusCode)")
@@ -115,6 +137,15 @@ class APIClient: APIClientProtocol {
                     print("📥 Data: \(responseString)")
                 }
             }
+            
+            // Update rate limit info from headers
+            let headers: [String: String] = Dictionary(uniqueKeysWithValues: 
+                httpResponse.allHeaderFields.compactMap { key, value in
+                    guard let stringKey = key as? String, let stringValue = value as? String else { return nil }
+                    return (stringKey, stringValue)
+                }
+            )
+            subscriptionManager.updateRateLimitInfo(from: headers)
             
             // Handle rate limiting
             if httpResponse.statusCode == 429 {
@@ -131,9 +162,27 @@ class APIClient: APIClientProtocol {
                 )
             }
             
-            return try JSONDecoder().decode(responseType, from: data)
+            let result = try JSONDecoder().decode(responseType, from: data)
+            let duration = Date().timeIntervalSince(startTime)
+            let cached = httpResponse.value(forHTTPHeaderField: "X-Cache") == "HIT"
+            
+            performanceMonitor.trackAPICall(
+                endpoint: performanceMonitor.extractEndpoint(from: request.url?.path ?? ""),
+                duration: duration,
+                success: success,
+                cached: cached
+            )
+            
+            return result
             
         } catch {
+            let duration = Date().timeIntervalSince(startTime)
+            performanceMonitor.trackAPICall(
+                endpoint: performanceMonitor.extractEndpoint(from: request.url?.path ?? ""),
+                duration: duration,
+                success: false
+            )
+            
             if error is TraceWiseError {
                 throw error
             } else if let urlError = error as? URLError {

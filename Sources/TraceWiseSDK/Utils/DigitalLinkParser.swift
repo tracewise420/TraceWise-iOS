@@ -4,7 +4,7 @@ public class DigitalLinkParser {
     
     // GS1 AIs: 01=GTIN (14 digits), 21=Serial, 10=Batch/Lot, 17=Expiry (YYMMDD)
     public static func parse(_ url: String) throws -> ProductIDs {
-        let gtinPattern = "/01/(\\d{14})"
+        let gtinPattern = "/01/(\\d{13,14})"
         let serialPattern = "/21/([^/?]+)"
         let batchPattern = "/10/([^/?]+)"
         let expiryPattern = "/17/(\\d{6})"

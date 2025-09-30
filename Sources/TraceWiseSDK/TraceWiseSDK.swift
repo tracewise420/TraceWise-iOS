@@ -2,10 +2,37 @@ import Foundation
 
 public class TraceWiseSDK {
     private let apiClient: APIClient
-    private let subscriptionStorage = SubscriptionStorage()
+    private let subscriptionManager: SubscriptionManager
+    private let csrfManager: CSRFManager
+    private let offlineQueue: OfflineQueue
+    
+    // MARK: - Modules
+    public let products: ProductsModule
+    public let dpp: DPPModule
+    public let search: SearchModule
+    public let resolve: ResolveModule
+    public let cirpass: CirpassModule
+    public let bulk: BulkModule
+    public let webhooks: WebhooksModule
+    public let tenants: TenantsModule
+    public let assets: AssetsModule
     
     public init(config: SDKConfig) {
         self.apiClient = APIClient(config: config)
+        self.subscriptionManager = SubscriptionManager(apiClient: apiClient)
+        self.csrfManager = CSRFManager(apiClient: apiClient)
+        self.offlineQueue = OfflineQueue()
+        
+        // Initialize modules
+        self.products = ProductsModule(apiClient: apiClient)
+        self.dpp = DPPModule(apiClient: apiClient)
+        self.search = SearchModule(apiClient: apiClient)
+        self.resolve = ResolveModule(apiClient: apiClient)
+        self.cirpass = CirpassModule(apiClient: apiClient)
+        self.bulk = BulkModule(apiClient: apiClient)
+        self.webhooks = WebhooksModule(apiClient: apiClient)
+        self.tenants = TenantsModule(apiClient: apiClient)
+        self.assets = AssetsModule(apiClient: apiClient)
     }
     
     public func parseDigitalLink(_ url: String) throws -> ProductIDs {
@@ -84,26 +111,120 @@ public class TraceWiseSDK {
     }
     
     public func getCirpassProduct(id: String) async throws -> CirpassProduct {
-        return try await apiClient.request(
-            method: .GET,
-            endpoint: "/v1/cirpass-sim/product/\(id)",
-            body: nil,
-            responseType: CirpassProduct.self
+        return try await cirpass.getCirpassProduct(id: id)
+    }
+    
+    // MARK: - Enhanced Product Methods
+    
+    public func listProducts(pageSize: Int? = nil, pageToken: String? = nil) async throws -> PaginatedResponse<Product> {
+        return try await products.listProducts(pageSize: pageSize, pageToken: pageToken)
+    }
+    
+    public func createProduct(product: Product) async throws -> CreateResponse {
+        return try await products.createProduct(product: product)
+    }
+    
+    public func getProductById(id: String) async throws -> Product {
+        return try await products.getProductById(id: id)
+    }
+    
+    public func updateProduct(id: String, updates: [String: Any]) async throws -> Product {
+        return try await products.updateProduct(id: id, updates: updates)
+    }
+    
+    public func deleteProduct(id: String) async throws {
+        try await products.deleteProduct(id: id)
+    }
+    
+    public func getUserProducts(userId: String, pageSize: Int? = nil, pageToken: String? = nil) async throws -> PaginatedResponse<Product> {
+        return try await products.getUserProducts(userId: userId, pageSize: pageSize, pageToken: pageToken)
+    }
+    
+    // MARK: - Enhanced CIRPASS Methods
+    
+    public func seedCirpassProducts(products: [CirpassProduct]) async throws {
+        try await cirpass.seedCirpassProducts(products: products)
+    }
+    
+    public func listCirpassProducts(limit: Int? = nil) async throws -> CirpassProductsResponse {
+        return try await cirpass.listCirpassProducts(limit: limit)
+    }
+    
+    // MARK: - DPP Methods
+    
+    public func createDPP(dppData: DPPCreateRequest) async throws -> DPP {
+        return try await dpp.createDPP(dppData: dppData)
+    }
+    
+    public func getDPP(gtin: String, serial: String? = nil) async throws -> DPP {
+        return try await dpp.getDPP(gtin: gtin, serial: serial)
+    }
+    
+    public func updateDPPClaims(gtin: String, serial: String? = nil, claimsUpdate: DPPClaimsUpdate) async throws -> DPP {
+        return try await dpp.updateDPPClaims(gtin: gtin, serial: serial, claimsUpdate: claimsUpdate)
+    }
+    
+    public func verifyDPP(gtin: String, serial: String? = nil, checks: [String] = ["schema", "signature", "consistency"]) async throws -> DPPVerificationResult {
+        return try await dpp.verifyDPP(gtin: gtin, serial: serial, checks: checks)
+    }
+    
+    // MARK: - Search Methods
+    
+    public func search(query: String, filters: [String: AnyCodable]? = nil, limit: Int? = nil) async throws -> [SearchResult] {
+        return try await search.search(query: query, filters: filters, limit: limit)
+    }
+    
+    public func searchProducts(query: String, filters: ProductFilters? = nil) async throws -> [Product] {
+        return try await search.searchProducts(query: query, filters: filters)
+    }
+    
+    public func searchEvents(
+        type: String? = nil,
+        bizStep: String? = nil,
+        readPoint: String? = nil,
+        whenFrom: String? = nil,
+        whenTo: String? = nil,
+        pageSize: Int? = nil,
+        pageToken: String? = nil
+    ) async throws -> PaginatedResponse<LifecycleEvent> {
+        return try await search.searchEvents(
+            type: type,
+            bizStep: bizStep,
+            readPoint: readPoint,
+            whenFrom: whenFrom,
+            whenTo: whenTo,
+            pageSize: pageSize,
+            pageToken: pageToken
         )
+    }
+    
+    // MARK: - Resolve Methods
+    
+    public func resolve(url: String) async throws -> ResolvedProduct {
+        return try await resolve.resolve(url: url)
+    }
+    
+    public func resolveDigitalLink(url: String) async throws -> ProductIDs {
+        return try await resolve.resolveDigitalLink(url: url)
+    }
+    
+    public func resolveWithOptions(url: String, includeProduct: Bool = true, includeDpp: Bool = false, includeCirpass: Bool = false) async throws -> ResolvedProduct {
+        return try await resolve.resolveWithOptions(url: url, includeProduct: includeProduct, includeDpp: includeDpp, includeCirpass: includeCirpass)
+    }
+    
+    public func resolveProductLinks(gtin: String, serial: String? = nil, linkType: String? = nil) async throws -> ResolveResponse {
+        return try await resolve.resolveProductLinks(gtin: gtin, serial: serial, linkType: linkType)
     }
     
     // MARK: - Additional Methods
     
     public func getSubscriptionInfo() async throws -> SubscriptionInfo {
-        let subscriptionInfo: SubscriptionInfo = try await apiClient.request(
-            method: .GET,
-            endpoint: "/v1/auth/me",
-            body: nil,
-            responseType: SubscriptionInfo.self
-        )
-        
-        subscriptionStorage.save(subscriptionInfo)
-        return subscriptionInfo
+        return try await subscriptionManager.getSubscriptionInfo()
+    }
+    
+    public func refreshCSRFToken() async throws {
+        csrfManager.clearToken()
+        _ = try await csrfManager.getCSRFToken()
     }
     
     public func healthCheck() async throws -> HealthResponse {
@@ -114,15 +235,38 @@ public class TraceWiseSDK {
             responseType: HealthResponse.self
         )
     }
+    
+    public func getPerformanceMetrics() -> PerformanceMetrics {
+        return PerformanceMonitor.shared.getMetrics()
+    }
+    
+    public func resetPerformanceMetrics() {
+        PerformanceMonitor.shared.reset()
+    }
+    
+    // MARK: - Offline Queue Management
+    
+    public func processOfflineQueue() async {
+        await offlineQueue.processQueue()
+    }
+    
+    public func getOfflineQueueSize() -> Int {
+        return offlineQueue.getQueueSize()
+    }
+    
+    // MARK: - Widget Functionality
+    
+    @available(iOS 14.0, macOS 11.0, *)
+    public func showDppPopup(dpp: DPP, onRepair: (() -> Void)? = nil, onResell: (() -> Void)? = nil, onFullDpp: (() -> Void)? = nil) -> DppPopupView {
+        return DppPopupView(
+            dpp: dpp,
+            isPresented: .constant(true),
+            onRepair: onRepair,
+            onResell: onResell,
+            onFullDpp: onFullDpp
+        )
+    }
+    
+
 }
 
-// Supporting types
-struct RegisterProductRequest: Codable {
-    let gtin: String
-    let serial: String?
-    let userId: String?
-}
-
-struct RegisterResponse: Codable {
-    let status: String
-}

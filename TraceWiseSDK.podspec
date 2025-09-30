@@ -1,22 +1,28 @@
 Pod::Spec.new do |spec|
   spec.name         = "TraceWiseSDK"
-  spec.version      = "1.0.1"
-  spec.summary      = "Official TraceWise SDK for iOS with exact Trello task signatures"
-  spec.description  = "TraceWise SDK provides seamless integration with TraceWise API for supply chain transparency and digital product passports."
-  
-  spec.homepage     = "https://github.com/tracewise420/TraceWise-iOS"
+  spec.version      = "1.0.0"
+  spec.summary      = "TraceWise SDK for iOS - Product traceability and digital product passports"
+  spec.description  = <<-DESC
+    TraceWise SDK provides comprehensive product traceability features including:
+    - Digital Product Passport (DPP) management
+    - Product search and resolution
+    - CIRPASS integration
+    - Lifecycle event tracking
+    - Enterprise subscription management
+  DESC
+
+  spec.homepage     = "https://github.com/tracewise/tracewise-ios-sdk"
   spec.license      = { :type => "MIT", :file => "LICENSE" }
-  spec.author       = { "TraceWise" => "sdk@tracewise.io" }
-  
+  spec.author       = { "TraceWise" => "support@tracewise.io" }
+
   spec.ios.deployment_target = "13.0"
-  spec.osx.deployment_target = "10.15"
-  spec.watchos.deployment_target = "6.0"
-  spec.tvos.deployment_target = "13.0"
-  
-  spec.source       = { :git => "https://github.com/tracewise420/TraceWise-iOS.git", :tag => "v#{spec.version}" }
+  spec.swift_version = "5.0"
+
+  spec.source       = { :git => "https://github.com/tracewise/tracewise-ios-sdk.git", :tag => "#{spec.version}" }
   spec.source_files = "Sources/TraceWiseSDK/**/*.swift"
-  
-  spec.dependency "Firebase/Auth", "~> 10.0"
-  
-  spec.swift_version = "5.9"
+
+  spec.framework    = "Foundation"
+  spec.requires_arc = true
+
+  spec.dependency "SwiftUI"
 end

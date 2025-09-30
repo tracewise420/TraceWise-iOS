@@ -4,11 +4,12 @@ public enum TraceWiseError: Error, LocalizedError {
     case invalidURL
     case invalidResponse
     case networkError(Error)
-    case apiError(code: String, message: String, statusCode: Int)
+    case apiError(code: String, message: String, statusCode: Int, correlationId: String? = nil)
     case authenticationError(String)
     case invalidDigitalLink(String)
     case rateLimitExceeded(retryAfter: Int?)
     case timeout
+    case uploadFailed
     case unknown(Error)
     
     public var errorDescription: String? {
@@ -19,7 +20,7 @@ public enum TraceWiseError: Error, LocalizedError {
             return "Invalid response from server"
         case .networkError(let error):
             return "Network error: \(error.localizedDescription)"
-        case .apiError(_, let message, _):
+        case .apiError(_, let message, _, _):
             return message
         case .authenticationError(let message):
             return "Authentication error: \(message)"
@@ -29,6 +30,8 @@ public enum TraceWiseError: Error, LocalizedError {
             return "Rate limit exceeded. Retry after \(retryAfter ?? 60) seconds"
         case .timeout:
             return "Request timeout"
+        case .uploadFailed:
+            return "File upload failed"
         case .unknown(let error):
             return "Unknown error: \(error.localizedDescription)"
         }
@@ -42,7 +45,7 @@ public enum TraceWiseError: Error, LocalizedError {
             return "INVALID_RESPONSE"
         case .networkError:
             return "NETWORK_ERROR"
-        case .apiError(let code, _, _):
+        case .apiError(let code, _, _, _):
             return code
         case .authenticationError:
             return "AUTH_ERROR"
@@ -52,18 +55,20 @@ public enum TraceWiseError: Error, LocalizedError {
             return "RATE_LIMIT_EXCEEDED"
         case .timeout:
             return "TIMEOUT"
+        case .uploadFailed:
+            return "UPLOAD_FAILED"
         case .unknown:
             return "UNKNOWN_ERROR"
         }
     }
+    
+    public var correlationId: String? {
+        switch self {
+        case .apiError(_, _, _, let correlationId):
+            return correlationId
+        default:
+            return nil
+        }
+    }
 }
 
-struct APIErrorResponse: Codable {
-    let error: APIErrorDetail
-}
-
-struct APIErrorDetail: Codable {
-    let code: String
-    let message: String
-    let correlationId: String?
-}

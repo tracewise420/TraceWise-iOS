@@ -19,7 +19,7 @@ class RetryManager {
                 
                 // Don't retry on client errors (4xx) except 429
                 if let traceWiseError = error as? TraceWiseError,
-                   case .apiError(_, _, let statusCode) = traceWiseError,
+                   case .apiError(_, _, let statusCode, _) = traceWiseError,
                    statusCode >= 400 && statusCode < 500 && statusCode != 429 {
                     throw error
                 }
