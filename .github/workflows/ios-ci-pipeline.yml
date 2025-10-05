@@ -372,17 +372,13 @@ jobs:
       
       - name: Publish to CocoaPods
         run: |
-          # TODO: Implement actual CocoaPods publishing
-          # - Remove dry-run when ready for production
-          # - Add pre-publish validation
-          # - Implement rollback mechanism for failed publishes
-          # - Add post-publish verification
           echo "Publishing package version: ${{ needs.build.outputs.version }}"
           if [ -z "${{ secrets.COCOAPODS_TRUNK_TOKEN }}" ]; then
             echo "❌ COCOAPODS_TRUNK_TOKEN not set - skipping publish"
+            exit 1
           else
+            pod trunk push TraceWiseSDK.podspec --allow-warnings
             echo "📦 CocoaPods package published successfully"
-            # pod trunk push TraceWiseSDK.podspec --allow-warnings
           fi
         env:
           COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}

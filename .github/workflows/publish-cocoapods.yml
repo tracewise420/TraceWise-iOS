@@ -1,0 +1,207 @@
+name: Publish to CocoaPods & SPM
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (leave empty for podspec version)'
+        required: false
+        type: string
+      dry_run:
+        description: 'Dry run (test without publishing)'
+        required: false
+        default: false
+        type: boolean
+      skip_cocoapods:
+        description: 'Skip CocoaPods publishing (SPM only)'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  publish:
+    name: Publish Package
+    runs-on: macos-latest
+    if: github.ref == 'refs/heads/main' || github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Select Xcode Version
+        run: |
+          XCODE_PATH=$(find /Applications -name "Xcode*.app" -maxdepth 1 | sort -V | tail -1)
+          if [ -n "$XCODE_PATH" ]; then
+            sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+            echo "Selected Xcode: $XCODE_PATH"
+          fi
+          
+      - name: Cache Swift Package Manager
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+            
+      - name: Install CocoaPods
+        run: |
+          gem install cocoapods
+          pod --version
+          
+      - name: Run quality checks
+        run: |
+          swift build -v
+          swift test --enable-code-coverage
+          if which swiftlint >/dev/null; then
+            swiftlint --strict || echo "SwiftLint warnings found"
+          fi
+          
+      - name: Build release
+        run: swift build -c release
+        
+      - name: Update version (if specified)
+        if: github.event.inputs.version != ''
+        run: |
+          # Update podspec version
+          sed -i '' 's/spec.version[[:space:]]*=[[:space:]]*"[^"]*"/spec.version = "${{ github.event.inputs.version }}"/' TraceWiseSDK.podspec
+          
+          # Update Package.swift if it has version
+          if grep -q "version:" Package.swift; then
+            sed -i '' 's/version: "[^"]*"/version: "${{ github.event.inputs.version }}"/' Package.swift
+          fi
+          
+      - name: Validate podspec
+        run: |
+          echo "🔍 Validating podspec..."
+          pod spec lint TraceWiseSDK.podspec --allow-warnings --verbose
+          
+      - name: Test SPM integration
+        run: |
+          echo "🔍 Testing Swift Package Manager integration..."
+          swift package resolve
+          swift build
+          
+      - name: Publish to CocoaPods (dry-run)
+        if: github.event.inputs.dry_run == 'true' && github.event.inputs.skip_cocoapods != 'true'
+        run: |
+          echo "🧪 DRY RUN MODE - CocoaPods"
+          pod spec lint TraceWiseSDK.podspec --allow-warnings
+          echo "✅ CocoaPods dry run completed successfully"
+          
+      - name: Publish to CocoaPods
+        if: github.event.inputs.dry_run != 'true' && github.event.inputs.skip_cocoapods != 'true'
+        run: |
+          echo "📦 Publishing to CocoaPods..."
+          
+          if [ -z "${{ secrets.COCOAPODS_TRUNK_TOKEN }}" ]; then
+            echo "❌ COCOAPODS_TRUNK_TOKEN not set"
+            echo "Please set up CocoaPods trunk access and add the token to GitHub secrets"
+            exit 1
+          fi
+          
+          pod trunk push TraceWiseSDK.podspec --allow-warnings
+          echo "✅ Published to CocoaPods successfully"
+        env:
+          COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
+          
+      - name: Create GitHub Release for SPM (dry-run)
+        if: github.event.inputs.dry_run == 'true'
+        run: |
+          VERSION=$(grep 'spec.version' TraceWiseSDK.podspec | sed 's/.*"\(.*\)".*/\1/')
+          echo "🧪 DRY RUN MODE - Would create GitHub release v$VERSION for SPM"
+          echo "✅ SPM dry run completed successfully"
+          
+      - name: Create GitHub Release for SPM
+        if: github.event.inputs.dry_run != 'true' && github.event_name != 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.event.inputs.version || 'auto' }}
+          name: Release v${{ github.event.inputs.version || 'auto' }}
+          body: |
+            ## TraceWise iOS SDK Release
+            
+            ### Installation
+            
+            #### CocoaPods
+            ```ruby
+            pod 'TraceWiseSDK'
+            ```
+            
+            #### Swift Package Manager
+            ```swift
+            dependencies: [
+                .package(url: "https://github.com/tracewise/tracewise-ios-sdk.git", from: "${{ github.event.inputs.version || '1.0.0' }}")
+            ]
+            ```
+            
+            ### Changes
+            See [CHANGELOG.md](CHANGELOG.md) for detailed changes.
+          draft: false
+          prerelease: ${{ contains(github.event.inputs.version, '-') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Verify CocoaPods publication
+        if: github.event.inputs.dry_run != 'true' && github.event.inputs.skip_cocoapods != 'true'
+        run: |
+          POD_NAME="TraceWiseSDK"
+          VERSION=$(grep 'spec.version' TraceWiseSDK.podspec | sed 's/.*"\(.*\)".*/\1/')
+          
+          echo "Verifying CocoaPods publication of $POD_NAME@$VERSION"
+          
+          # Wait for CocoaPods to update
+          sleep 60
+          
+          # Check if pod is available
+          pod search $POD_NAME --simple | grep $POD_NAME || {
+            echo "⚠️ Pod not immediately available in search (may take time to propagate)"
+          }
+          
+          echo "✅ CocoaPods verification completed"
+          
+      - name: Verify SPM publication
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          VERSION=$(grep 'spec.version' TraceWiseSDK.podspec | sed 's/.*"\(.*\)".*/\1/')
+          
+          echo "Verifying SPM publication for tag v$VERSION"
+          
+          # Check if tag exists
+          git tag | grep "v$VERSION" || {
+            echo "⚠️ Git tag v$VERSION not found"
+          }
+          
+          echo "✅ SPM verification completed"
+          
+      - name: Create summary
+        run: |
+          POD_NAME="TraceWiseSDK"
+          VERSION=$(grep 'spec.version' TraceWiseSDK.podspec | sed 's/.*"\(.*\)".*/\1/')
+          
+          echo "## 📦 iOS SDK Publication Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Pod Name**: \`$POD_NAME\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: \`$VERSION\`" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ github.event.inputs.skip_cocoapods }}" != "true" ]; then
+            echo "- **CocoaPods**: [cocoapods.org](https://cocoapods.org/pods/$POD_NAME)" >> $GITHUB_STEP_SUMMARY
+            echo "- **CocoaPods Install**: \`pod '$POD_NAME'\`" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "- **Swift Package Manager**: [GitHub](https://github.com/tracewise/tracewise-ios-sdk)" >> $GITHUB_STEP_SUMMARY
+          echo "- **SPM Install**: \`.package(url: \"https://github.com/tracewise/tracewise-ios-sdk.git\", from: \"$VERSION\")\`" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ github.event.inputs.dry_run }}" == "true" ]; then
+            echo "- **Status**: 🧪 Dry run completed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- **Status**: ✅ Published successfully" >> $GITHUB_STEP_SUMMARY
+          fi

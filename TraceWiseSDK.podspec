@@ -11,18 +11,18 @@ Pod::Spec.new do |spec|
     - Enterprise subscription management
   DESC
 
-  spec.homepage     = "https://github.com/tracewise/tracewise-ios-sdk"
+  spec.homepage     = "https://github.com/tracewise420/TraceWise-iOS"
   spec.license      = { :type => "MIT", :file => "LICENSE" }
   spec.author       = { "TraceWise" => "support@tracewise.io" }
 
   spec.ios.deployment_target = "13.0"
   spec.swift_version = "5.0"
 
-  spec.source       = { :git => "https://github.com/tracewise/tracewise-ios-sdk.git", :tag => "#{spec.version}" }
+  spec.source       = { :git => "https://github.com/tracewise420/TraceWise-iOS.git", :tag => "#{spec.version}" }
   spec.source_files = "Sources/TraceWiseSDK/**/*.swift"
 
   spec.framework    = "Foundation"
   spec.requires_arc = true
-
-  spec.dependency "SwiftUI"
+  
+  spec.dependency "Firebase/Auth"
 end
