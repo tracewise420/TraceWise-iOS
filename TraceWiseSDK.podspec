@@ -24,5 +24,5 @@ Pod::Spec.new do |spec|
   spec.framework    = "Foundation"
   spec.requires_arc = true
   
-  spec.dependency "Firebase/Auth"
+  spec.dependency "FirebaseAuth"
 end
