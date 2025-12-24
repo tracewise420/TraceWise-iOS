@@ -6,6 +6,9 @@ public class TraceWiseSDK {
     private let csrfManager: CSRFManager
     private let offlineQueue: OfflineQueue
     
+    // MARK: - Auth Provider
+    public let authProvider: AuthProvider
+    
     // MARK: - Modules
     public let products: ProductsModule
     public let dpp: DPPModule
@@ -18,7 +21,8 @@ public class TraceWiseSDK {
     public let assets: AssetsModule
     
     public init(config: SDKConfig) {
-        self.apiClient = APIClient(config: config)
+        self.authProvider = AuthProvider(config: config)
+        self.apiClient = APIClient(config: config, authProvider: authProvider)
         self.subscriptionManager = SubscriptionManager(apiClient: apiClient)
         self.csrfManager = CSRFManager(apiClient: apiClient)
         self.offlineQueue = OfflineQueue()
@@ -33,6 +37,32 @@ public class TraceWiseSDK {
         self.webhooks = WebhooksModule(apiClient: apiClient)
         self.tenants = TenantsModule(apiClient: apiClient)
         self.assets = AssetsModule(apiClient: apiClient)
+    }
+    
+    public static func initialize(config: SDKConfig) async throws -> TraceWiseSDK {
+        return TraceWiseSDK(config: config)
+    }
+    
+    // MARK: - JWT Authentication Methods
+    
+    public func exchangeFirebaseForJWT(_ firebaseToken: String) async throws -> [String: Any] {
+        print("🔄 [DEBUG] iOS SDK: exchangeFirebaseForJWT called")
+        do {
+            let jwtResponse = try await authProvider.getAuthToken(firebaseToken)
+            print("✅ [DEBUG] iOS SDK: JWT exchange successful in main SDK")
+            return jwtResponse.toDictionary()
+        } catch {
+            print("❌ [DEBUG] iOS SDK: JWT exchange failed in main SDK: \(error.localizedDescription)")
+            throw error
+        }
+    }
+    
+    public func getStoredJWTToken() async throws -> String {
+        return try await authProvider.getStoredJWTToken()
+    }
+    
+    public func refreshJWTToken() async throws -> String {
+        return try await authProvider.refreshJWTToken()
     }
     
     public func parseDigitalLink(_ url: String) throws -> ProductIDs {
@@ -140,6 +170,20 @@ public class TraceWiseSDK {
         return try await products.getUserProducts(userId: userId, pageSize: pageSize, pageToken: pageToken)
     }
     
+    // MARK: - GS1 Digital Link Methods
+    
+    public func resolveDigitalLinkEnhanced(url: String) async throws -> ResolveDigitalLinkResponse {
+        return try await products.resolveDigitalLink(url: url)
+    }
+    
+    public func getProductByGtin(gtin: String, serial: String? = nil) async throws -> EnhancedProductResponse {
+        return try await products.getProductByGtin(gtin: gtin, serial: serial)
+    }
+    
+    public func generateQRCode(gtin: String, serial: String? = nil) async throws -> QRCodeResponse {
+        return try await products.generateQRCode(gtin: gtin, serial: serial)
+    }
+    
     // MARK: - Enhanced CIRPASS Methods
     
     public func seedCirpassProducts(products: [CirpassProduct]) async throws {
@@ -174,8 +218,13 @@ public class TraceWiseSDK {
         return try await search.search(query: query, filters: filters, limit: limit)
     }
     
-    public func searchProducts(query: String, filters: ProductFilters? = nil) async throws -> [Product] {
-        return try await search.searchProducts(query: query, filters: filters)
+    public func searchProducts(query: String? = nil, filters: ProductFilters? = nil) async throws -> PaginatedResponse<Product> {
+        if let query = query {
+            let products = try await search.searchProducts(query: query, filters: filters)
+            return PaginatedResponse(items: products, nextPageToken: nil, totalCount: products.count)
+        } else {
+            return try await products.listProducts()
+        }
     }
     
     public func searchEvents(

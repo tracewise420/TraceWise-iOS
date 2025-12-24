@@ -15,7 +15,7 @@ Pod::Spec.new do |spec|
   spec.license      = { :type => "MIT", :file => "LICENSE" }
   spec.author       = { "TraceWise" => "support@tracewise.io" }
 
-  spec.ios.deployment_target = "13.0"
+  spec.ios.deployment_target = "15.0"
   spec.swift_version = "5.0"
 
   spec.source       = { :git => "https://github.com/tracewise420/TraceWise-iOS.git", :tag => "#{spec.version}" }
@@ -24,5 +24,5 @@ Pod::Spec.new do |spec|
   spec.framework    = "Foundation"
   spec.requires_arc = true
   
-  spec.dependency "FirebaseAuth"
+  spec.dependency "Firebase/Auth"
 end
