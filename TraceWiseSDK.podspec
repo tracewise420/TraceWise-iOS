@@ -18,7 +18,7 @@ Pod::Spec.new do |spec|
   spec.ios.deployment_target = "15.0"
   spec.swift_version = "5.0"
 
-  spec.source       = { :git => "https://github.com/tracewise420/TraceWise-iOS.git", :tag => "#{spec.version}" }
+  spec.source       = { :git => "https://github.com/tracewise420/TraceWise-iOS.git", :tag => "v#{spec.version}" }
   spec.source_files = "Sources/TraceWiseSDK/**/*.swift"
 
   spec.framework    = "Foundation"
