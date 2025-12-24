@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name         = "TraceWiseSDK"
-  spec.version      = "1.0.0"
+  spec.version      = `git describe --tags --exact-match 2>/dev/null | sed 's/^v//'`.strip.empty? ? "1.0.0" : `git describe --tags --exact-match 2>/dev/null | sed 's/^v//'`.strip
   spec.summary      = "TraceWise SDK for iOS - Product traceability and digital product passports"
   spec.description  = <<-DESC
     TraceWise SDK provides comprehensive product traceability features including:
