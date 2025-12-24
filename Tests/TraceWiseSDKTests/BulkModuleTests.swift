@@ -8,7 +8,8 @@ final class BulkModuleTests: XCTestCase {
     override func setUp() {
         super.setUp()
         let config = SDKConfig(baseURL: "https://test.com", apiKey: "test")
-        mockAPIClient = MockAPIClient(config: config)
+        let authProvider = AuthProvider(config: config)
+        mockAPIClient = MockAPIClient(config: config, authProvider: authProvider)
         bulkModule = BulkModule(apiClient: mockAPIClient)
     }
     

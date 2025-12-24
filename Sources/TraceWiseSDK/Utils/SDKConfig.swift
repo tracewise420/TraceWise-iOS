@@ -2,7 +2,7 @@ import Foundation
 
 public struct SDKConfig {
     public let baseURL: String
-    public let apiKey: String?
+    public let apiKey: String
     public let firebaseTokenProvider: (() async throws -> String)?
     public let timeoutInterval: TimeInterval
     public let maxRetries: Int
@@ -10,7 +10,7 @@ public struct SDKConfig {
     
     public init(
         baseURL: String,
-        apiKey: String? = nil,
+        apiKey: String,
         firebaseTokenProvider: (() async throws -> String)? = nil,
         timeoutInterval: TimeInterval = 30.0,
         maxRetries: Int = 3,

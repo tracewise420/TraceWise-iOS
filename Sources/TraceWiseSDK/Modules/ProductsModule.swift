@@ -118,5 +118,47 @@ public class ProductsModule {
             responseType: PaginatedResponse<Product>.self
         )
     }
+    
+    // MARK: - GS1 Digital Link Methods
+    
+    public func resolveDigitalLink(url: String) async throws -> ResolveDigitalLinkResponse {
+        let requestBody = ResolveDigitalLinkRequest(url: url)
+        let data = try JSONEncoder().encode(requestBody)
+        
+        return try await apiClient.request(
+            method: .POST,
+            endpoint: "/v1/products/resolve-digital-link",
+            body: data,
+            responseType: ResolveDigitalLinkResponse.self
+        )
+    }
+    
+    public func getProductByGtin(gtin: String, serial: String? = nil) async throws -> EnhancedProductResponse {
+        var endpoint = "/v1/products/gtin/\(gtin)"
+        if let serial = serial {
+            endpoint += "?serial=\(serial)"
+        }
+        
+        return try await apiClient.request(
+            method: .GET,
+            endpoint: endpoint,
+            body: nil,
+            responseType: EnhancedProductResponse.self
+        )
+    }
+    
+    public func generateQRCode(gtin: String, serial: String? = nil) async throws -> QRCodeResponse {
+        var endpoint = "/v1/products/generate-qr/\(gtin)"
+        if let serial = serial {
+            endpoint += "?serial=\(serial)"
+        }
+        
+        return try await apiClient.request(
+            method: .GET,
+            endpoint: endpoint,
+            body: nil,
+            responseType: QRCodeResponse.self
+        )
+    }
 }
 
