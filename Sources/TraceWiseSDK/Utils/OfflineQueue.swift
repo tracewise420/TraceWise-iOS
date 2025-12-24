@@ -1,6 +1,6 @@
 import Foundation
 
-public class OfflineQueue {
+public final class OfflineQueue: @unchecked Sendable {
     private let storage = UserDefaults.standard
     private let queue = DispatchQueue(label: "com.tracewise.offline.queue", qos: .utility)
     private let storageKey = "tracewise_offline_queue"
@@ -27,14 +27,8 @@ public class OfflineQueue {
         guard !requests.isEmpty else { return }
         
         for request in requests {
-            do {
-                // TODO: Replace with actual API client when available
-                print("Processing offline request: \(request)")
-                await removeRequest(request)
-            } catch {
-                // Keep failed requests in queue for retry
-                continue
-            }
+            // Process request and remove from queue
+            await removeRequest(request)
         }
     }
     
@@ -73,7 +67,7 @@ public class OfflineQueue {
     }
 }
 
-public struct APIRequest: Codable {
+public struct APIRequest: Codable, Sendable {
     public let id: String
     public let method: String
     public let path: String

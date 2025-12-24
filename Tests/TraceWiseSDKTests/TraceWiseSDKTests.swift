@@ -9,6 +9,7 @@ final class TraceWiseSDKTests: XCTestCase {
         super.setUp()
         let config = SDKConfig(
             baseURL: "https://api.test.com",
+            apiKey: "test",
             enableLogging: true
         )
         sdk = TraceWiseSDK(config: config)
