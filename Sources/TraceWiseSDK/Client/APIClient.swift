@@ -25,10 +25,10 @@ class APIClient: APIClientProtocol {
     private var csrfManager: CSRFManager!
     private let performanceMonitor = PerformanceMonitor.shared
     
-    init(config: SDKConfig) {
+    init(config: SDKConfig, authProvider: AuthProvider) {
         self.config = config
         self.retryManager = RetryManager(maxRetries: config.maxRetries)
-        self.authProvider = AuthProvider(config: config)
+        self.authProvider = authProvider
         
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = config.timeoutInterval
@@ -68,7 +68,11 @@ class APIClient: APIClientProtocol {
         body: Data?,
         responseType: T.Type
     ) async throws -> T {
-        guard let url = URL(string: config.baseURL + endpoint) else {
+        // Fix URL construction - remove leading slash from endpoint if baseURL ends with slash
+        let cleanEndpoint = endpoint.hasPrefix("/") ? String(endpoint.dropFirst()) : endpoint
+        let urlString = config.baseURL.hasSuffix("/") ? config.baseURL + cleanEndpoint : config.baseURL + "/" + cleanEndpoint
+        
+        guard let url = URL(string: urlString) else {
             throw TraceWiseError.invalidURL
         }
         
